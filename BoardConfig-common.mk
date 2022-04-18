@@ -46,6 +46,7 @@ BOARD_KERNEL_CMDLINE += earlycon=exynos4210,0x10A00000 console=ttySAC0,115200 an
 BOARD_KERNEL_CMDLINE += cma_sysfs.experimental=Y
 BOARD_KERNEL_CMDLINE += stack_depot_disable=off page_pinner=on
 BOARD_KERNEL_CMDLINE += swiotlb=noforce
+BOARD_KERNEL_CMDLINE += twrpfastboot=1
 BOARD_BOOTCONFIG += androidboot.boot_devices=14700000.ufs
 
 TARGET_NO_BOOTLOADER := true
@@ -419,3 +420,32 @@ BOARD_KERNEL_CMDLINE += at24.write_timeout=100
 BOARD_KERNEL_CMDLINE += log_buf_len=1024K
 
 -include vendor/google_devices/gs101/proprietary/BoardConfigVendor.mk
+
+# TWRP
+DISABLE_ARTIFACT_PATH_REQUIREMENTS := true
+TW_THEME := portrait_hdpi
+TW_INCLUDE_CRYPTO := true
+BOARD_SUPPRESS_SECURE_ERASE := true
+TARGET_RECOVERY_QCOM_RTC_FIX := true
+TW_INPUT_BLACKLIST := "hbtp_vm"
+TW_DEFAULT_BRIGHTNESS := "80"
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_RECOVERY_ADDITIONAL_RELINK_BINARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/system/bin/strace
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/vendor/lib64/libnos.so
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/vendor/lib64/libnosprotos.so
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/vendor/lib64/libnos_client_citadel.so
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/vendor/lib64/libnos_datagram_citadel.so
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/vendor/lib64/libnos_datagram.so
+TW_RECOVERY_ADDITIONAL_RELINK_LIBRARY_FILES += out/target/product/$(PRODUCT_HARDWARE)/system/lib64/libtrusty.so
+TWRP_INCLUDE_LOGCAT := true
+TARGET_USES_LOGD := true
+TW_USE_TOOLBOX := true
+TW_NO_HAPTICS := true
+TW_INCLUDE_REPACKTOOLS := true
+#TW_EXTRA_LANGUAGES := true
+TW_LIBTAR_DEBUG := true
+TW_INCLUDE_RESETPROP := true
+TW_EXCLUDE_NANO := true
+TW_EXCLUDE_MTP := true
+TW_LOAD_VENDOR_MODULES := "sec_touch.ko ftm5.ko"
+TW_DEFAULT_BRIGHTNESS := 820
