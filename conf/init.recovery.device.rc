@@ -1,11 +1,32 @@
+#on early-init
+#    mkdir /dev/boringssl 0755 root root
+#    mkdir /dev/boringssl/selftest 0755 root root
+
+#on early-init && property:ro.product.cpu.abilist32=*
+#    exec_start boringssl_self_test32
+#on early-init && property:ro.product.cpu.abilist64=*
+#    exec_start boringssl_self_test64
+
 on init
+    setrlimit nofile 32768 32768
+    restorecon /vendor/bin/hw/android.hardware.security.keymint-service.citadel
+    restorecon /vendor/bin/hw/android.hardware.security.keymint-service.trusty
+    restorecon /vendor/bin/hw/citadeld
+    restorecon /vendor/bin/hw/init_citadeld
+    restorecon /vendor/bin/hw/android\.hardware\.security\.keymint-service\.citadel
     wait /sys/devices/platform/11110000.usb/11110000.dwc3/driver 10
     setprop sys.usb.controller "11110000.dwc3"
     setprop sys.usb.configfs 1
-    start gatekeeper
-    start citadeld
+    #start init_citadel
+    start prepdecrypt
+
+on property:crypto.ready=1
     start keymint-citadel
     start keymint-trusty
+    start citadeld
+    #start trusty_apploader
+    #start statsd
+    start gatekeeper
     start identity-citadeld
     start weaver-citadeld
 
@@ -25,38 +46,74 @@ on fs && property:sys.usb.configfs=1
     write /config/usb_gadget/g1/configs/b.1/MaxPower 900
 
 
-service citadeld /system/bin/citadeld
+service citadeld /vendor/bin/hw/citadeld
+    disabled
+    user hsm
+    group hsm
+    seclabel u:r:citadeld:s0
+
+service statsd /apex/com.google.android.os.statsd/bin/statsd
     disabled
     user hsm
     group hsm
     seclabel u:r:recovery:s0
 
-service weaver-citadeld /system/bin/android.hardware.weaver@1.0-service.citadel
+service init_citadel /vendor/bin/hw/init_citadel
+    disabled
+    oneshot
+    user hsm
+    group hsm
+    seclabel u:r:citadeld:s0
+
+service weaver-citadeld /vendor/bin/hw/android.hardware.weaver@1.0-service.citadel
     disabled
     user hsm
     group hsm
-    seclabel u:r:recovery:s0
+    seclabel u:r:hal_weaver_citadel:s0
 
-service identity-citadeld /system/bin/android.hardware.identity@1.0-service.citadel
+service identity-citadeld /vendor/bin/hw/android.hardware.identity@1.0-service.citadel
     disabled
     user nobody
     group nobody
-    seclabel u:r:recovery:s0
+    seclabel u:r:hal_identity_citadel:s0
 
-service keymint-trusty /system/bin/android.hardware.security.keymint-service.trusty
+service keymint-trusty /vendor/bin/hw/android.hardware.security.keymint-service.trusty
     disabled
     user nobody
     group drmrpc
-    seclabel u:r:recovery:s0
+    seclabel u:r:hal_keymint_default:s0
 
-service keymint-citadel /system/bin/android.hardware.security.keymint-service.citadel
+service keymint-citadel /vendor/bin/hw/android.hardware.security.keymint-service.citadel
     disabled
     user hsm
-    group hsm
-    seclabel u:r:recovery:s0
+    group hsm drmrpc
+    seclabel u:r:hal_keymint_citadel:s0
 
-service gatekeeper /system/bin/android.hardware.gatekeeper@1.0-service.trusty
+service gatekeeper /vendor/bin/hw/android.hardware.gatekeeper@1.0-service.trusty
     disabled
     user system
     group system
     seclabel u:r:recovery:s0
+
+service trusty_apploader /vendor/bin/hw/trusty_apploader /vendor/firmware/g6.app
+    disabled
+    user system
+    group system
+    seclabel u:r:recovery:s0
+
+service prepdecrypt /system/bin/prepdecrypt.sh
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
+
+service boringssl_self_test32 /system/bin/boringssl_self_test32
+    setenv BORINGSSL_SELF_TEST_CREATE_FLAG true # Any nonempty value counts as true
+    reboot_on_failure reboot,boringssl-self-check-failed
+    stdio_to_kmsg
+
+service boringssl_self_test64 /system/bin/boringssl_self_test64
+    setenv BORINGSSL_SELF_TEST_CREATE_FLAG true # Any nonempty value counts as true
+    reboot_on_failure reboot,boringssl-self-check-failed
+    stdio_to_kmsg
